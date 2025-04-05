@@ -1,24 +1,4 @@
-// mem_if.bsv
-interface MemIfc;
-    method Action put(Bit#(1) a, Bit#(1) b);
-    method Bit#(1) get();
+interface Mem_If;
+    method Action put(Bit#(1) data);
+    method ActionValue#(Bit#(1)) get();
 endinterface
-
-module mkXOR(MemIfc);
-    Reg#(Bit#(1)) x <- mkReg(0);
-    Reg#(Bit#(1)) y <- mkReg(0);
-    Reg#(Bit#(1)) out <- mkReg(0);
-
-    rule compute;
-        out <= x ^ y;
-    endrule
-
-    method Action put(Bit#(1) a, Bit#(1) b);
-        x <= a;
-        y <= b;
-    endmethod
-
-    method Bit#(1) get();
-        return out;
-    endmethod
-endmodule
