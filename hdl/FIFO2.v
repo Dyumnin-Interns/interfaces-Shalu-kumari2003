@@ -9,7 +9,7 @@ module FIFO2 (
     output wire read_rdy
 );
 
-reg [1:0] mem [0:0];
+reg [1:0] mem [0:1];
 reg [0:0] wptr, rptr;
 reg full, empty;
 
