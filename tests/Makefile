@@ -1,13 +1,9 @@
-TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = ../hdl/delayed_dut.v ../hdl/FIFO1.v ../hdl/FIFO2.v ../hdl/dut.v
-TOPLEVEL = delayed_dut
-MODULE = dut_test
+all: run
 
-SIM = icarus
-COCOTB_HDL_TIMEUNIT = 1ns
-COCOTB_HDL_TIMEPRECISION = 1ps
+run:
+	iverilog -o sim -I../hdl ../hdl/FIFO1.v ../hdl/FIFO2.v ../hdl/dut.v ../hdl/delayed_dut.v dut_test.py
+	vvp sim
+	gtkwave dump.vcd
 
-include $(shell cocotb-config --makefiles)/Makefile.sim
-
-wave:
-	gtkwave waveforms.vcd &
+clean:
+	rm -f sim dump.vcd
