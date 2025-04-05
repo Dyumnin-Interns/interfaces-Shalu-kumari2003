@@ -15,34 +15,36 @@ module delayed_dut (
 );
     reg a_valid, b_valid;
 
+    // Combinatorial ready signals
     always @(*) begin
         a_rdy = !a_valid;
         b_rdy = !b_valid;
     end
 
+    // Sequential logic
     always @(posedge CLK or negedge RST_N) begin
         if (!RST_N) begin
-            a_valid <= 0;
-            b_valid <= 0;
-            y_en <= 0;
-            y_data <= 0;
+            a_valid <= 1'b0;
+            b_valid <= 1'b0;
+            y_en <= 1'b0;
+            y_data <= 1'b0;
         end
         else begin
             // Capture inputs
-            if (a_en && a_rdy) a_valid <= 1;
-            if (b_en && b_rdy) b_valid <= 1;
+            if (a_en && a_rdy) a_valid <= 1'b1;
+            if (b_en && b_rdy) b_valid <= 1'b1;
             
             // Compute XOR when both inputs ready
             if (a_valid && b_valid) begin
                 y_data <= a_data ^ b_data;
-                y_en <= 1;
-                a_valid <= 0;
-                b_valid <= 0;
+                y_en <= 1'b1;
+                a_valid <= 1'b0;
+                b_valid <= 1'b0;
             end
             
             // Clear output when consumed
             if (y_en && y_rdy) begin
-                y_en <= 0;
+                y_en <= 1'b0;
             end
         end
     end
