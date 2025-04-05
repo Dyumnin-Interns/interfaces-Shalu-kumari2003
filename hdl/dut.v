@@ -15,20 +15,18 @@ module dut (
     input wire write_en
 );
 
-// Internal signals
 wire A_Data, B_Data;
 wire A_FIFO_not_full, B_FIFO_not_full;
 wire Y_FIFO_not_empty;
 wire Y_Output;
 
-// FIFO Instantiations
 FIFO1 A_FIFO (
     .CLK(CLK),
     .RST_N(RST_N),
     .write_en(write_en && (write_address == 3'd4)),
     .write_data(write_data),
     .write_rdy(A_FIFO_not_full),
-    .read_en(read_en && (read_address == 3'd4)),
+    .read_en(1'b1),
     .read_data(A_Data),
     .read_rdy()
 );
@@ -39,15 +37,14 @@ FIFO1 B_FIFO (
     .write_en(write_en && (write_address == 3'd5)),
     .write_data(write_data),
     .write_rdy(B_FIFO_not_full),
-    .read_en(read_en && (read_address == 3'd5)),
+    .read_en(1'b1),
     .read_data(B_Data),
     .read_rdy()
 );
 
-// XOR Gate Implementation
 assign Y_Output = A_Data ^ B_Data;
 
-FIFO2 Y_FIFO (
+FIFO1 Y_FIFO (
     .CLK(CLK),
     .RST_N(RST_N),
     .write_en(A_FIFO_not_full && B_FIFO_not_full),
@@ -58,7 +55,6 @@ FIFO2 Y_FIFO (
     .read_rdy(Y_FIFO_not_empty)
 );
 
-// Read Interface Logic
 always @(*) begin
     read_rdy = 1'b1;
     case (read_address)
@@ -70,7 +66,6 @@ always @(*) begin
     endcase
 end
 
-// Write Interface Logic
 assign write_rdy = (write_address == 3'd4) ? A_FIFO_not_full :
                    (write_address == 3'd5) ? B_FIFO_not_full : 1'b0;
 
