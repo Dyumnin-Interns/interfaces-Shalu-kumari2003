@@ -1,48 +1,53 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, FallingEdge, Timer
+from cocotb.triggers import RisingEdge, Timer
 
-@cocotb.test()
-async def test_xor_gate(dut):
-    """Test XOR gate functionality through CSR interface"""
-    
-    clock = Clock(dut.CLK, 10, units="ns")
-    cocotb.start_soon(clock.start())
-    
-    # Reset
+async def reset_dut(dut):
     dut.RST_N.value = 0
     await Timer(20, units="ns")
     dut.RST_N.value = 1
     await RisingEdge(dut.CLK)
+
+async def write_register(dut, address, data):
+    await RisingEdge(dut.CLK)
+    dut.write_address.value = address
+    dut.write_data.value = data
+    dut.write_en.value = 1
+    await RisingEdge(dut.CLK)
+    while dut.write_rdy.value != 1:
+        await RisingEdge(dut.CLK)
+    dut.write_en.value = 0
+    await RisingEdge(dut.CLK)
+
+async def read_register(dut, address):
+    await RisingEdge(dut.CLK)
+    dut.read_address.value = address
+    dut.read_en.value = 1
+    await RisingEdge(dut.CLK)
+    while dut.read_rdy.value != 1:
+        await RisingEdge(dut.CLK)
+    data = dut.read_data.value
+    dut.read_en.value = 0
+    await RisingEdge(dut.CLK)
+    return data
+
+@cocotb.test()
+async def test_xor_gate(dut):
+    clock = Clock(dut.CLK, 10, units="ns")
+    cocotb.start_soon(clock.start())
     
-    # Test all combinations
+    await reset_dut(dut)
+    
+    # Test all XOR combinations
     test_cases = [(0, 0), (0, 1), (1, 0), (1, 1)]
     
     for a, b in test_cases:
-        # Write A value (address 4)
-        dut.write_address.value = 4
-        dut.write_data.value = a
-        dut.write_en.value = 1
-        await RisingEdge(dut.CLK)
-        dut.write_en.value = 0
-        await RisingEdge(dut.CLK)
+        # Write inputs
+        await write_register(dut, 4, a)  # Address 4: A_Data
+        await write_register(dut, 5, b)  # Address 5: B_Data
         
-        # Write B value (address 5)
-        dut.write_address.value = 5
-        dut.write_data.value = b
-        dut.write_en.value = 1
-        await RisingEdge(dut.CLK)
-        dut.write_en.value = 0
-        await RisingEdge(dut.CLK)
-        
-        # Read output (address 3)
-        dut.read_address.value = 3
-        dut.read_en.value = 1
-        await RisingEdge(dut.CLK)
-        while dut.read_rdy.value != 1:
-            await RisingEdge(dut.CLK)
-        y_output = dut.read_data.value
-        dut.read_en.value = 0
+        # Read output
+        y_output = await read_register(dut, 3)  # Address 3: Y_Output
         
         # Verify
         expected = a ^ b
