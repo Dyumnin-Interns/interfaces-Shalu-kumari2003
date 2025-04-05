@@ -1,4 +1,3 @@
-// hdl/dut.v
 module dut(
     input clk,
     input rst,
@@ -6,13 +5,8 @@ module dut(
     input b,
     output reg out
 );
-
 always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        out <= 1'b0;
-    end else begin
-        out <= a ^ b;
-    end
+    if (rst) out <= 1'b0;
+    else out <= a ^ b;
 end
-
 endmodule
