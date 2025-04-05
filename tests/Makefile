@@ -1,13 +1,11 @@
-SIM ?= icarus
-TOPLEVEL_LANG ?= verilog
-VERILOG_SOURCES = $(shell pwd)/../hdl/FIFO1.v $(shell pwd)/../hdl/dut.v
-TOPLEVEL = dut
-MODULE = dut_test
+all: compile simulate
 
-COCOTB_HDL_TIMEPRECISION = 1ns
-EXTRA_ARGS += --vcd=on
+compile:
+	iverilog -o dut_test ../hdl/FIFO1.v ../hdl/FIFO2.v ../hdl/dut.v dut_test.v
 
-include $(shell cocotb-config --makefiles)/Makefile.sim
+simulate:
+	vvp dut_test
+	gtkwave dut_test.vcd
 
-wave:
-	gtkwave dump.vcd
+clean:
+	rm -f dut_test dut_test.vcd
