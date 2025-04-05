@@ -1,10 +1,10 @@
-TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = ../hdl/delayed_dut.v
+# test/Makefile
+TOPLEVEL_LANG ?= verilog
+VERILOG_SOURCES = ../hdl/delayed_dut.v ../hdl/FIFO1.v ../hdl/FIFO2.v ../hdl/dut.v
 TOPLEVEL = delayed_dut
 MODULE = dut_test
 
-# Waveform generation (correct syntax for Icarus)
-SIM_ARGS = -vcd=waveform.vcd
-EXTRA_ARGS = 
-
 include $(shell cocotb-config --makefiles)/Makefile.sim
+
+wave:
+	gtkwave waveforms.vcd &
