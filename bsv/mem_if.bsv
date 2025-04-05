@@ -1,6 +1,10 @@
-interface MemIfc;
-    method Action readReq(Bit#(3) addr);
-    method ActionValue#(Bit#(1)) readResp();
-    method Action writeReq(Bit#(3) addr, Bit#(1) data);
-    method Bool writeReady();
+interface Mem_ifc;
+    // Read interface
+    method Action read(Bit#(3) read_address);
+    method Bit#(1) read_data;
+    method Bit#(1) read_rdy;
+    
+    // Write interface
+    method Action write(Bit#(3) write_address, Bit#(1) write_data);
+    method Bit#(1) write_rdy;
 endinterface
