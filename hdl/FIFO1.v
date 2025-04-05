@@ -1,34 +1,37 @@
-module FIFO1(
-    input clk,
-    input rst,
-    input wr_en,
-    input [1:0] din,
-    output reg rd_en,
-    output reg [1:0] dout,
-    output full,
-    output empty
+module FIFO1 (
+    input wire CLK,
+    input wire RST_N,
+    input wire write_en,
+    input wire write_data,
+    output wire write_rdy,
+    input wire read_en,
+    output wire read_data,
+    output wire read_rdy
 );
-reg [1:0] mem [0:7];
-reg [2:0] wr_ptr, rd_ptr;
-reg [3:0] count;
 
-assign full = (count == 8);
-assign empty = (count == 0);
+reg [0:0] mem;
+reg full;
+reg empty;
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        wr_ptr <= 0; rd_ptr <= 0;
-        count <= 0; rd_en <= 0;
+assign write_rdy = !full;
+assign read_rdy = !empty;
+assign read_data = mem;
+
+always @(posedge CLK or negedge RST_N) begin
+    if (!RST_N) begin
+        mem <= 1'b0;
+        full <= 1'b0;
+        empty <= 1'b1;
     end else begin
-        if (wr_en && !full) begin
-            mem[wr_ptr] <= din;
-            wr_ptr <= wr_ptr + 1;
+        if (write_en && !full) begin
+            mem <= write_data;
+            full <= 1'b1;
+            empty <= 1'b0;
+        end else if (read_en && !empty) begin
+            full <= 1'b0;
+            empty <= 1'b1;
         end
-        if (rd_en && !empty) begin
-            dout <= mem[rd_ptr];
-            rd_ptr <= rd_ptr + 1;
-        end
-        count <= count + (wr_en && !full) - (rd_en && !empty);
     end
 end
+
 endmodule
