@@ -1,24 +1,24 @@
 import cocotb
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.clock import Clock
-from cocotb.result import TestSuccess
 
-@cocotb.test()
-async def test_xor_gate(dut):
-    # Create 100MHz clock
-    clock = Clock(dut.clk, 10, units="ns")
-    cocotb.start_soon(clock.start())
-    
-    # Reset sequence
-    dut.reset_n.value = 0
+async def reset_dut(dut):
+    dut.RST_N.value = 0
     dut.a_data.value = 0
     dut.b_data.value = 0
     dut.a_en.value = 0
     dut.b_en.value = 0
-    dut.y_rdy.value = 1  # Always ready for autograder
     await Timer(20, units="ns")
-    dut.reset_n.value = 1
-    await RisingEdge(dut.clk)
+    dut.RST_N.value = 1
+    await RisingEdge(dut.CLK)
+
+@cocotb.test()
+async def test_xor_gate(dut):
+    # Start 100MHz clock
+    cocotb.start_soon(Clock(dut.CLK, 10, units="ns").start())
+    
+    # Reset
+    await reset_dut(dut)
     
     # Test cases: (a, b, expected_y)
     test_cases = [
@@ -34,24 +34,22 @@ async def test_xor_gate(dut):
         dut.b_data.value = b
         dut.a_en.value = 1
         dut.b_en.value = 1
-        await RisingEdge(dut.clk)
+        await RisingEdge(dut.CLK)
         
-        # Release enables
+        # Clear enables
         dut.a_en.value = 0
         dut.b_en.value = 0
         
         # Wait for output
-        timeout = 100
-        while not dut.y_en.value and timeout > 0:
-            await RisingEdge(dut.clk)
-            timeout -= 1
+        while not dut.y_en.value:
+            await RisingEdge(dut.CLK)
         
-        assert timeout > 0, "Timeout waiting for output"
-        assert dut.y_data.value == expected, f"{a} XOR {b} failed (got {dut.y_data.value}, expected {expected})"
+        # Verify output
+        assert dut.y_data.value == expected, f"Failed: {a} XOR {b} = {dut.y_data.value} (expected {expected})"
         
-        # Consume output
-        await RisingEdge(dut.clk)
+        # Acknowledge output
+        dut.y_rdy.value = 1
+        await RisingEdge(dut.CLK)
+        dut.y_rdy.value = 0
     
-    # Final delay for complete waveforms
-    await Timer(100, units="ns")
-    raise TestSuccess("All tests passed with waveforms")
+    dut._log.info("All tests passed!")
