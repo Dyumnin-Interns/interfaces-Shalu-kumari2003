@@ -5,9 +5,6 @@ from cocotb.result import TestSuccess
 
 @cocotb.test()
 async def test_xor_gate(dut):
-    # Enable waveform dumping
-    dut._log.info("Starting test with waveform generation")
-    
     # Create 100MHz clock
     clock = Clock(dut.clk, 10, units="ns")
     cocotb.start_soon(clock.start())
@@ -43,18 +40,18 @@ async def test_xor_gate(dut):
         dut.a_en.value = 0
         dut.b_en.value = 0
         
-        # Wait for output (max 100 cycles)
+        # Wait for output
         timeout = 100
         while not dut.y_en.value and timeout > 0:
             await RisingEdge(dut.clk)
             timeout -= 1
         
         assert timeout > 0, "Timeout waiting for output"
-        assert dut.y_data.value == expected, f"{a} XOR {b} failed"
+        assert dut.y_data.value == expected, f"{a} XOR {b} failed (got {dut.y_data.value}, expected {expected})"
         
         # Consume output
         await RisingEdge(dut.clk)
     
-    # Extra cycles for complete waveforms
+    # Final delay for complete waveforms
     await Timer(100, units="ns")
     raise TestSuccess("All tests passed with waveforms")
