@@ -1,18 +1,13 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = ../hdl/delayed_dut.v ../hdl/FIFO1.v ../hdl/FIFO2.v
+VERILOG_SOURCES = ../hdl/delayed_dut.v ../hdl/FIFO1.v ../hdl/FIFO2.v ../hdl/dut.v
 TOPLEVEL = delayed_dut
 MODULE = dut_test
 
-# Waveform generation (correct syntax for Icarus)
-SIM_ARGS = -DCOCOTB_SIM=1
-PLUSARGS = +vcd
-EXTRA_ARGS = 
-
-# For VCD dumping, use this instead of --vcd
-COCOTB_HDL_TIMEPRECISION = 1ns
+SIM ?= icarus
+COCOTB_HDL_TIMEUNIT = 1ns
+COCOTB_HDL_TIMEPRECISION = 1ps
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
-# Additional target to generate VCD
-wave: all
-	vvp -n sim_build/sim.vvp +vcd
+wave:
+	gtkwave waveforms.vcd &
