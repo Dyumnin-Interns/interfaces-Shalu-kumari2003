@@ -1,52 +1,46 @@
-module delayed_dut (
-    input CLK,
-    input RST_N,
-    input a_data,
-    input a_en,
-    output a_rdy,
-    input b_data,
-    input b_en,
-    output b_rdy,
-    output reg y_data,
-    output reg y_en,
-    input y_rdy
+// hdl/delayed_dut.v
+module delayed_dut(
+    input clk,
+    input rst,
+    input [1:0] din,
+    input wr_en,
+    output [1:0] dout,
+    output rd_en
 );
-    // Internal registers
-    reg a_valid, b_valid;
-    
-    assign a_rdy = !a_valid;
-    assign b_rdy = !b_valid;
 
-    always @(posedge CLK or negedge RST_N) begin
-        if (!RST_N) begin
-            a_valid <= 0;
-            b_valid <= 0;
-            y_en <= 0;
-            y_data <= 0;
-        end
-        else begin
-            // Capture inputs
-            if (a_en && a_rdy) a_valid <= 1;
-            if (b_en && b_rdy) b_valid <= 1;
-            
-            // Compute XOR when both inputs are ready
-            if (a_valid && b_valid) begin
-                y_data <= a_data ^ b_data;
-                y_en <= 1;
-                a_valid <= 0;
-                b_valid <= 0;
-            end
-            
-            // Clear output when consumed
-            if (y_en && y_rdy) begin
-                y_en <= 0;
-            end
-        end
-    end
-    
-    // Waveform dumping
-    initial begin
-        $dumpfile("waveform.vcd");
-        $dumpvars(0, delayed_dut);
-    end
+wire a, b;
+wire xor_out;
+
+FIFO1 input_fifo(
+    .clk(clk),
+    .rst(rst),
+    .wr_en(wr_en),
+    .din(din),
+    .rd_en(rd_en),
+    .dout({a, b}),
+    .full(),
+    .empty()
+);
+
+dut xor_gate(
+    .clk(clk),
+    .rst(rst),
+    .a(a),
+    .b(b),
+    .out(xor_out)
+);
+
+FIFO2 output_fifo(
+    .clk(clk),
+    .rst(rst),
+    .wr_en(rd_en),
+    .din(xor_out),
+    .rd_en(1'b1),
+    .dout(dout[0]),
+    .full(),
+    .empty()
+);
+
+assign dout[1] = 1'b0;
+
 endmodule
