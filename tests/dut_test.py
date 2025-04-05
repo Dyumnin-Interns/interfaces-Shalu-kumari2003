@@ -1,62 +1,53 @@
-import random
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer
 
-async def reset_dut(dut):
-    dut.RST_N.value = 0
-    await Timer(10, units="ns")
-    dut.RST_N.value = 1
-    await RisingEdge(dut.CLK)
-
-async def write_register(dut, address, data):
-    await FallingEdge(dut.CLK)
-    dut.write_address.value = address
-    dut.write_data.value = data
-    dut.write_en.value = 1
-    await FallingEdge(dut.CLK)
-    while dut.write_rdy.value != 1:
-        await FallingEdge(dut.CLK)
-    dut.write_en.value = 0
-
-async def read_register(dut, address):
-    await FallingEdge(dut.CLK)
-    dut.read_address.value = address
-    dut.read_en.value = 1
-    await FallingEdge(dut.CLK)
-    while dut.read_rdy.value != 1:
-        await FallingEdge(dut.CLK)
-    data = dut.read_data.value
-    dut.read_en.value = 0
-    return data
-
 @cocotb.test()
 async def test_xor_gate(dut):
+    """Test XOR gate functionality through CSR interface"""
+    
     clock = Clock(dut.CLK, 10, units="ns")
     cocotb.start_soon(clock.start())
     
-    await reset_dut(dut)
+    # Reset
+    dut.RST_N.value = 0
+    await Timer(20, units="ns")
+    dut.RST_N.value = 1
+    await RisingEdge(dut.CLK)
     
-    # Test all combinations of A and B
+    # Test all combinations
     test_cases = [(0, 0), (0, 1), (1, 0), (1, 1)]
     
     for a, b in test_cases:
-        # Write A and B values
-        await write_register(dut, 4, a)
-        await write_register(dut, 5, b)
+        # Write A value (address 4)
+        dut.write_address.value = 4
+        dut.write_data.value = a
+        dut.write_en.value = 1
+        await RisingEdge(dut.CLK)
+        dut.write_en.value = 0
+        await RisingEdge(dut.CLK)
         
-        # Check status registers
-        a_status = await read_register(dut, 0)
-        b_status = await read_register(dut, 1)
-        y_status = await read_register(dut, 2)
+        # Write B value (address 5)
+        dut.write_address.value = 5
+        dut.write_data.value = b
+        dut.write_en.value = 1
+        await RisingEdge(dut.CLK)
+        dut.write_en.value = 0
+        await RisingEdge(dut.CLK)
         
-        # Read output
-        y_output = await read_register(dut, 3)
+        # Read output (address 3)
+        dut.read_address.value = 3
+        dut.read_en.value = 1
+        await RisingEdge(dut.CLK)
+        while dut.read_rdy.value != 1:
+            await RisingEdge(dut.CLK)
+        y_output = dut.read_data.value
+        dut.read_en.value = 0
         
-        # Verify XOR operation
+        # Verify
         expected = a ^ b
         assert y_output == expected, f"XOR failed: {a} ^ {b} = {y_output}, expected {expected}"
         
-        print(f"PASS: {a} ^ {b} = {y_output}")
+        dut._log.info(f"PASS: {a} ^ {b} = {y_output}")
     
-    print("All XOR tests passed!")
+    dut._log.info("All XOR tests passed!")
