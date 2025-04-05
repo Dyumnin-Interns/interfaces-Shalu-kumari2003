@@ -1,44 +1,50 @@
 module delayed_dut (
     input clk,
     input reset_n,
-    input A_data,
-    input A_enable,
-    output A_ready,
-    input B_data,
-    input B_enable,
-    output B_ready,
-    output reg Y_data,
-    output reg Y_enable,
-    input Y_ready
+    input a_data,
+    input a_en,
+    output a_rdy,
+    input b_data,
+    input b_en,
+    output b_rdy,
+    output reg y_data,
+    output reg y_en,
+    input y_rdy
 );
-    // State management
-    reg A_valid, B_valid;
+    reg a_valid, b_valid;
     
-    assign A_ready = !A_valid;
-    assign B_ready = !B_valid;
+    assign a_rdy = !a_valid;
+    assign b_rdy = !b_valid;
+
+    // Initialize waveform dumping
+    initial begin
+        $dumpfile("waveform.vcd");
+        $dumpvars(0, delayed_dut);
+    end
 
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
-            A_valid <= 0;
-            B_valid <= 0;
-            Y_enable <= 0;
+            a_valid <= 0;
+            b_valid <= 0;
+            y_en <= 0;
+            y_data <= 0;
         end
         else begin
-            // Capture inputs when enabled
-            if (A_enable && A_ready) A_valid <= 1;
-            if (B_enable && B_ready) B_valid <= 1;
+            // Capture inputs
+            if (a_en && a_rdy) a_valid <= 1;
+            if (b_en && b_rdy) b_valid <= 1;
             
-            // Compute XOR when both inputs are valid
-            if (A_valid && B_valid) begin
-                Y_data <= A_data ^ B_data;  // Correct XOR operation
-                Y_enable <= 1;
-                A_valid <= 0;
-                B_valid <= 0;
+            // Compute XOR when both inputs are ready
+            if (a_valid && b_valid) begin
+                y_data <= a_data ^ b_data;
+                y_en <= 1;
+                a_valid <= 0;
+                b_valid <= 0;
             end
             
             // Clear output when consumed
-            if (Y_enable && Y_ready) begin
-                Y_enable <= 0;
+            if (y_en && y_rdy) begin
+                y_en <= 0;
             end
         end
     end
