@@ -7,37 +7,39 @@ module delayed_dut (
     input B_data,
     input B_enable,
     output B_ready,
-    output Y_data,
-    output Y_enable,
+    output reg Y_data,
+    output reg Y_enable,
     input Y_ready
 );
-    reg A_reg, B_reg;
-    reg Y_reg;
-    reg Y_valid;
-
-    assign A_ready = !Y_valid;
-    assign B_ready = !Y_valid;
-    assign Y_data = Y_reg;
-    assign Y_enable = Y_valid;
+    // State management
+    reg A_valid, B_valid;
+    
+    assign A_ready = !A_valid;
+    assign B_ready = !B_valid;
 
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
-            A_reg <= 0;
-            B_reg <= 0;
-            Y_reg <= 0;
-            Y_valid <= 0;
+            A_valid <= 0;
+            B_valid <= 0;
+            Y_enable <= 0;
         end
         else begin
-            if (A_enable && A_ready) A_reg <= A_data;
-            if (B_enable && B_ready) B_reg <= B_data;
-            if (A_enable || B_enable) begin
-                Y_reg <= A_reg ^ B_reg;  // XOR Operation
-                Y_valid <= 1;
+            // Capture inputs when enabled
+            if (A_enable && A_ready) A_valid <= 1;
+            if (B_enable && B_ready) B_valid <= 1;
+            
+            // Compute XOR when both inputs are valid
+            if (A_valid && B_valid) begin
+                Y_data <= A_data ^ B_data;  // Correct XOR operation
+                Y_enable <= 1;
+                A_valid <= 0;
+                B_valid <= 0;
             end
-            else if (Y_enable && Y_ready) begin
-                Y_valid <= 0;
+            
+            // Clear output when consumed
+            if (Y_enable && Y_ready) begin
+                Y_enable <= 0;
             end
         end
     end
 endmodule
-
