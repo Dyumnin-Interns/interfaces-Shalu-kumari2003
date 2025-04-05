@@ -1,34 +1,31 @@
-module FIFO2(
+module FIFO2 (
     input clk,
-    input rst,
-    input wr_en,
-    input din,
-    output reg rd_en,
-    output reg dout,
-    output full,
-    output empty
+    input reset_n,
+    input data_in,
+    input enable_in,
+    output ready_out,
+    output data_out,
+    output enable_out,
+    input ready_in
 );
-reg [7:0] mem;
-reg [2:0] wr_ptr, rd_ptr;
-reg [3:0] count;
+    reg buffer;
+    reg full;
 
-assign full = (count == 8);
-assign empty = (count == 0);
+    assign ready_out = !full;
+    assign data_out = buffer;
+    assign enable_out = full;
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        wr_ptr <= 0; rd_ptr <= 0;
-        count <= 0; rd_en <= 0;
-    end else begin
-        if (wr_en && !full) begin
-            mem[wr_ptr] <= din;
-            wr_ptr <= wr_ptr + 1;
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
+            buffer <= 0;
+            full <= 0;
         end
-        if (rd_en && !empty) begin
-            dout <= mem[rd_ptr];
-            rd_ptr <= rd_ptr + 1;
+        else if (enable_in && ready_out) begin
+            buffer <= data_in;
+            full <= 1;
         end
-        count <= count + (wr_en && !full) - (rd_en && !empty);
+        else if (enable_out && ready_in) begin
+            full <= 0;
+        end
     end
-end
 endmodule
