@@ -1,7 +1,6 @@
 import cocotb
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.clock import Clock
-from cocotb.waveform import WaveDumper
 
 async def reset_dut(dut):
     dut.reset_n.value = 0
@@ -15,16 +14,14 @@ async def reset_dut(dut):
 
 @cocotb.test()
 async def test_xor_gate(dut):
-    # Enable waveform dumping
-    WaveDumper(dut)
-    
     # Start 100MHz clock
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    clock = Clock(dut.clk, 10, units="ns")
+    cocotb.start_soon(clock.start())
     
     # Reset
     await reset_dut(dut)
     
-    # Test cases: (a, b, expected_y)
+    # Test cases
     test_cases = [
         (0, 0, 0),
         (0, 1, 1),
@@ -44,17 +41,17 @@ async def test_xor_gate(dut):
         dut.a_en.value = 0
         dut.b_en.value = 0
         
-        # Wait for computation
+        # Wait for output
         while not dut.y_en.value:
             await RisingEdge(dut.clk)
         
-        # Verify output
-        assert dut.y_data.value == expected, f"Failed: {a} XOR {b} = {dut.y_data.value} (expected {expected})"
+        # Verify
+        assert dut.y_data.value == expected, f"{a} XOR {b} = {dut.y_data.value} (expected {expected})"
         
-        # Acknowledge output
+        # Acknowledge
         dut.y_rdy.value = 1
         await RisingEdge(dut.clk)
         dut.y_rdy.value = 0
     
-    dut._log.info("All XOR tests passed!")
-    await Timer(100, units="ns")  # Extra time for waveform viewing
+    dut._log.info("All tests passed!")
+    await Timer(100, units="ns")  # Extra time for waveforms
