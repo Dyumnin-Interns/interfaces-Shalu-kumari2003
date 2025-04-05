@@ -12,6 +12,9 @@ COCOTB_HDL_TIMEPRECISION = 1ps
 # Include Cocotb's Makefile
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
+# Override default targets
+.PHONY: all test clean
+
 all: test
 
 test:
