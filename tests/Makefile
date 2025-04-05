@@ -4,6 +4,5 @@ TOPLEVEL = delayed_dut
 MODULE = dut_test
 SIM = icarus
 WAVES = 1
-EXTRA_ARGS = -g2012
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
