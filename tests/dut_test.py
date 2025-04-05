@@ -15,11 +15,9 @@ async def reset_dut(dut):
 
 @cocotb.test()
 async def test_xor_gate(dut):
-    # Enable waveform dumping
-    os.environ["COCOTB_ENABLE_WAVES"] = "1"
-    
     # Start 100MHz clock
-    cocotb.start_soon(Clock(dut.CLK, 10, units="ns").start())
+    clock = Clock(dut.CLK, 10, units="ns")
+    cocotb.start_soon(clock.start())
     
     # Reset
     await reset_dut(dut)
@@ -56,7 +54,5 @@ async def test_xor_gate(dut):
         await RisingEdge(dut.CLK)
         dut.y_rdy.value = 0
     
-    dut._log.info("All XOR tests passed!")
-
-    # Keep simulation running for waveforms
-    await Timer(100, units="ns")
+    dut._log.info("All tests passed!")
+    await Timer(100, units="ns")  # Extra time for waveforms
