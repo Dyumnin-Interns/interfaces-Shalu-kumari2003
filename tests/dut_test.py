@@ -42,9 +42,14 @@ async def test_xor_gate(dut):
         dut.a_en.value = 0
         dut.b_en.value = 0
         
-        # Wait for computation
-        while not dut.y_en.value:
+        # Wait for computation (timeout after 100 cycles)
+        timeout = 100
+        while not dut.y_en.value and timeout > 0:
             await RisingEdge(dut.CLK)
+            timeout -= 1
+        
+        if timeout == 0:
+            raise cocotb.result.TestFailure("Timeout waiting for y_en")
         
         # Verify output
         assert dut.y_data.value == expected, f"Failed: {a} XOR {b} = {dut.y_data.value} (expected {expected})"
