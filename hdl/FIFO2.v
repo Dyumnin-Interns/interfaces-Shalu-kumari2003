@@ -1,40 +1,29 @@
 module FIFO2 (
-    input wire CLK,
-    input wire RST_N,
-    input wire write_en,
-    input wire write_data,
-    output wire write_rdy,
-    input wire read_en,
-    output wire read_data,
-    output wire read_rdy
+    input CLK,
+    input RST_N,
+    input enq,
+    input [0:0] din,
+    output reg full,
+    output reg [0:0] dout,
+    output reg empty
 );
-
-reg [1:0] mem [0:1];
-reg [0:0] wptr, rptr;
-reg full, empty;
-
-assign write_rdy = !full;
-assign read_rdy = !empty;
-assign read_data = mem[rptr];
-
-always @(posedge CLK or negedge RST_N) begin
-    if (!RST_N) begin
-        wptr <= 1'b0;
-        rptr <= 1'b0;
-        full <= 1'b0;
-        empty <= 1'b1;
-    end else begin
-        if (write_en && !full) begin
-            mem[wptr] <= write_data;
-            wptr <= wptr + 1;
-            full <= (wptr + 1 == rptr);
-            empty <= 1'b0;
-        end else if (read_en && !empty) begin
-            rptr <= rptr + 1;
-            empty <= (rptr + 1 == wptr);
-            full <= 1'b0;
+    reg [1:0] fifo;
+    reg [0:0] head;
+    
+    always @(posedge CLK or negedge RST_N) begin
+        if (!RST_N) begin
+            fifo <= 0;
+            head <= 0;
+            full <= 0;
+            empty <= 1;
+        end
+        else if (enq && !full) begin
+            fifo[head] <= din;
+            head <= head + 1;
+            empty <= 0;
+            full <= (head == 1);
         end
     end
-end
-
+    
+    assign dout = fifo[0];
 endmodule
