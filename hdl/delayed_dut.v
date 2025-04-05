@@ -4,36 +4,30 @@ module delayed_dut(
     input [1:0] din,
     input wr_en,
     output [1:0] dout,
-    output reg rd_en
+    output rd_en
 );
-reg [1:0] input_reg;
-reg output_reg;
-wire xor_out;
+wire a, b, xor_out;
+wire output_rd_en = 1'b1;
 
-// Input handling
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
-        input_reg <= 2'b0;
-        rd_en <= 0;
-    end 
-    else if (wr_en) begin
-        input_reg <= din;
-        rd_en <= 1;
-    end
-    else begin
-        rd_en <= 0;
-    end
-end
+FIFO1 input_fifo(
+    .clk(clk), .rst(rst),
+    .wr_en(wr_en), .din(din),
+    .rd_en(rd_en), .dout({a,b}),
+    .full(), .empty()
+);
 
-// XOR operation
-dut xor_inst(
-    .clk(clk),
-    .rst(rst),
-    .a(input_reg[0]),
-    .b(input_reg[1]),
+dut xor_gate(
+    .clk(clk), .rst(rst),
+    .a(a), .b(b),
     .out(xor_out)
 );
 
-// Output assignment
-assign dout = {1'b0, xor_out};
+FIFO2 output_fifo(
+    .clk(clk), .rst(rst),
+    .wr_en(rd_en), .din(xor_out),
+    .rd_en(output_rd_en), .dout(dout[0]),
+    .full(), .empty()
+);
+
+assign dout[1] = 1'b0;
 endmodule
