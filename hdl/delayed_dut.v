@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
 
 module delayed_dut (
-    input  wire CLK,
-    input  wire RST_N,
+    input  wire clk,
+    input  wire reset_n,
     input  wire a_data,
     input  wire a_en,
     output reg  a_rdy,
@@ -22,8 +22,8 @@ module delayed_dut (
     end
 
     // Sequential logic
-    always @(posedge CLK or negedge RST_N) begin
-        if (!RST_N) begin
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
             a_valid <= 1'b0;
             b_valid <= 1'b0;
             y_en <= 1'b0;
