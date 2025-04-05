@@ -2,10 +2,11 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 
-async def reset_dut(dut):
+async def reset_dut(dut, duration_ns=100):
     dut.RST_N.value = 0
-    await Timer(20, units="ns")
+    await Timer(duration_ns, units="ns")
     dut.RST_N.value = 1
+    await RisingEdge(dut.CLK)
     await RisingEdge(dut.CLK)
 
 async def write_register(dut, address, data):
@@ -36,23 +37,25 @@ async def test_xor_gate(dut):
     clock = Clock(dut.CLK, 10, units="ns")
     cocotb.start_soon(clock.start())
     
-    await reset_dut(dut)
+    await reset_dut(dut, 100)
     
-    # Test all XOR combinations
     test_cases = [(0, 0), (0, 1), (1, 0), (1, 1)]
     
     for a, b in test_cases:
         # Write inputs
-        await write_register(dut, 4, a)  # Address 4: A_Data
-        await write_register(dut, 5, b)  # Address 5: B_Data
+        await write_register(dut, 4, a)
+        await write_register(dut, 5, b)
+        
+        # Wait for computation
+        await Timer(50, units="ns")
         
         # Read output
-        y_output = await read_register(dut, 3)  # Address 3: Y_Output
+        y_output = await read_register(dut, 3)
         
         # Verify
         expected = a ^ b
-        assert y_output == expected, f"XOR failed: {a} ^ {b} = {y_output}, expected {expected}"
+        assert y_output == expected, f"XOR failed: {a} ^ {b} = {int(y_output)}, expected {expected}"
         
-        dut._log.info(f"PASS: {a} ^ {b} = {y_output}")
+        dut._log.info(f"PASS: {a} ^ {b} = {int(y_output)}")
     
     dut._log.info("All XOR tests passed!")
