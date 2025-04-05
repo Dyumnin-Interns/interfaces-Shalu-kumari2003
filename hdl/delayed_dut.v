@@ -1,34 +1,42 @@
-module delayed_dut(
+module delayed_dut (
     input clk,
-    input rst,
-    input [1:0] din,
-    input wr_en,
-    output [1:0] dout,
-    output rd_en
+    input reset_n,
+    input A_data,
+    input A_enable,
+    output A_ready,
+    input B_data,
+    input B_enable,
+    output B_ready,
+    output Y_data,
+    output Y_enable,
+    input Y_ready
 );
-wire a, b, xor_out;
+    reg A_reg, B_reg;
+    reg Y_reg;
+    reg Y_valid;
 
-FIFO1 input_fifo(
-    .clk(clk), .rst(rst),
-    .wr_en(wr_en), .din(din),
-    .rd_en(rd_en), .dout({a,b}),
-    .full(), .empty()
-);
+    assign A_ready = !Y_valid;
+    assign B_ready = !Y_valid;
+    assign Y_data = Y_reg;
+    assign Y_enable = Y_valid;
 
-dut xor_gate(
-    .clk(clk), .rst(rst),
-    .a(a), .b(b),
-    .out(xor_out)
-);
-
-FIFO2 output_fifo(
-    .clk(clk), .rst(rst),
-    .wr_en(rd_en), .din(xor_out),
-    .rd_en(output_rd_en), .dout(dout[0]),
-    .full(), .empty()
-);
-
-assign dout[1] = 1'b0;
-assign output_rd_en = 1'b1;
-
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
+            A_reg <= 0;
+            B_reg <= 0;
+            Y_reg <= 0;
+            Y_valid <= 0;
+        end
+        else begin
+            if (A_enable && A_ready) A_reg <= A_data;
+            if (B_enable && B_ready) B_reg <= B_data;
+            if (A_enable || B_enable) begin
+                Y_reg <= A_reg ^ B_reg;  // XOR Operation
+                Y_valid <= 1;
+            end
+            else if (Y_enable && Y_ready) begin
+                Y_valid <= 0;
+            end
+        end
+    end
 endmodule
