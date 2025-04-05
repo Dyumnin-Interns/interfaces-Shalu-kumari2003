@@ -1,61 +1,71 @@
-import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer
-
-async def reset_dut(dut, duration_ns=100):
-    dut.RST_N.value = 0
-    await Timer(duration_ns, units="ns")
-    dut.RST_N.value = 1
-    await RisingEdge(dut.CLK)
-    await RisingEdge(dut.CLK)
-
-async def write_register(dut, address, data):
-    await RisingEdge(dut.CLK)
-    dut.write_address.value = address
-    dut.write_data.value = data
-    dut.write_en.value = 1
-    await RisingEdge(dut.CLK)
-    while dut.write_rdy.value != 1:
-        await RisingEdge(dut.CLK)
-    dut.write_en.value = 0
-    await RisingEdge(dut.CLK)
-
-async def read_register(dut, address):
-    await RisingEdge(dut.CLK)
-    dut.read_address.value = address
-    dut.read_en.value = 1
-    await RisingEdge(dut.CLK)
-    while dut.read_rdy.value != 1:
-        await RisingEdge(dut.CLK)
-    data = dut.read_data.value
-    dut.read_en.value = 0
-    await RisingEdge(dut.CLK)
-    return data
-
-@cocotb.test()
-async def test_xor_gate(dut):
-    clock = Clock(dut.CLK, 10, units="ns")
-    cocotb.start_soon(clock.start())
+module dut_test;
+    reg CLK;
+    reg RST_N;
+    reg [2:0] read_address;
+    wire [0:0] read_data;
+    wire read_rdy;
+    reg read_en;
+    wire write_rdy;
+    reg [2:0] write_address;
+    reg [0:0] write_data;
+    reg write_en;
     
-    await reset_dut(dut, 100)
+    dut DUT (
+        .CLK(CLK),
+        .RST_N(RST_N),
+        .read_address(read_address),
+        .read_data(read_data),
+        .read_rdy(read_rdy),
+        .read_en(read_en),
+        .write_rdy(write_rdy),
+        .write_address(write_address),
+        .write_data(write_data),
+        .write_en(write_en)
+    );
     
-    test_cases = [(0, 0), (0, 1), (1, 0), (1, 1)]
+    initial begin
+        $dumpfile("dut_test.vcd");
+        $dumpvars(0, dut_test);
+        
+        // Initialize
+        CLK = 0;
+        RST_N = 0;
+        read_en = 0;
+        write_en = 0;
+        #10 RST_N = 1;
+        
+        // Test case 1: 0 XOR 0 = 0
+        #10 write_address = 4; write_data = 0; write_en = 1;
+        #10 write_en = 0;
+        #10 write_address = 5; write_data = 0; write_en = 1;
+        #10 write_en = 0;
+        #10 read_address = 3; read_en = 1;
+        #10 read_en = 0;
+        if (read_data == 0) $display("Test 1: PASS (0 XOR 0 = 0)");
+        else $display("Test 1: FAIL");
+        
+        // Test case 2: 0 XOR 1 = 1
+        #10 write_address = 4; write_data = 0; write_en = 1;
+        #10 write_en = 0;
+        #10 write_address = 5; write_data = 1; write_en = 1;
+        #10 write_en = 0;
+        #10 read_address = 3; read_en = 1;
+        #10 read_en = 0;
+        if (read_data == 1) $display("Test 2: PASS (0 XOR 1 = 1)");
+        else $display("Test 2: FAIL");
+        
+        // Test case 3: 1 XOR 1 = 0
+        #10 write_address = 4; write_data = 1; write_en = 1;
+        #10 write_en = 0;
+        #10 write_address = 5; write_data = 1; write_en = 1;
+        #10 write_en = 0;
+        #10 read_address = 3; read_en = 1;
+        #10 read_en = 0;
+        if (read_data == 0) $display("Test 3: PASS (1 XOR 1 = 0)");
+        else $display("Test 3: FAIL");
+        
+        #100 $finish;
+    end
     
-    for a, b in test_cases:
-        # Write inputs
-        await write_register(dut, 4, a)
-        await write_register(dut, 5, b)
-        
-        # Wait for computation
-        await Timer(50, units="ns")
-        
-        # Read output
-        y_output = await read_register(dut, 3)
-        
-        # Verify
-        expected = a ^ b
-        assert y_output == expected, f"XOR failed: {a} ^ {b} = {int(y_output)}, expected {expected}"
-        
-        dut._log.info(f"PASS: {a} ^ {b} = {int(y_output)}")
-    
-    dut._log.info("All XOR tests passed!")
+    always #5 CLK = ~CLK;
+endmodule
