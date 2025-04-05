@@ -10,6 +10,7 @@ module delayed_dut(
 
 wire a, b;
 wire xor_out;
+wire output_rd_en = 1'b1;  // Create a wire for the constant value
 
 FIFO1 input_fifo(
     .clk(clk),
@@ -35,7 +36,7 @@ FIFO2 output_fifo(
     .rst(rst),
     .wr_en(rd_en),
     .din(xor_out),
-    .rd_en(1'b1),
+    .rd_en(output_rd_en),  // Use the wire here
     .dout(dout[0]),
     .full(),
     .empty()
