@@ -15,16 +15,13 @@ module dut (
     input wire write_en
 );
 
-// Internal registers
-reg A_Data, B_Data;
-reg Y_Status;
-wire Y_Output;
-
-// FIFO signals
+// Internal signals
+wire A_Data, B_Data;
 wire A_FIFO_not_full, B_FIFO_not_full;
 wire Y_FIFO_not_empty;
+wire Y_Output;
 
-// Instantiate FIFOs
+// FIFO Instantiations
 FIFO1 A_FIFO (
     .CLK(CLK),
     .RST_N(RST_N),
@@ -47,7 +44,7 @@ FIFO1 B_FIFO (
     .read_rdy()
 );
 
-// XOR Gate implementation
+// XOR Gate Implementation
 assign Y_Output = A_Data ^ B_Data;
 
 FIFO2 Y_FIFO (
@@ -61,7 +58,7 @@ FIFO2 Y_FIFO (
     .read_rdy(Y_FIFO_not_empty)
 );
 
-// Read interface logic
+// Read Interface Logic
 always @(*) begin
     read_rdy = 1'b1;
     case (read_address)
@@ -73,7 +70,7 @@ always @(*) begin
     endcase
 end
 
-// Write interface is handled by FIFOs directly
+// Write Interface Logic
 assign write_rdy = (write_address == 3'd4) ? A_FIFO_not_full :
                    (write_address == 3'd5) ? B_FIFO_not_full : 1'b0;
 
