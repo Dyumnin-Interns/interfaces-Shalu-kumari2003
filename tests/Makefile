@@ -1,9 +1,10 @@
-all: run
+SIM ?= icarus
+TOPLEVEL_LANG ?= verilog
+VERILOG_SOURCES = $(shell pwd)/../hdl/FIFO1.v $(shell pwd)/../hdl/FIFO2.v $(shell pwd)/../hdl/dut.v $(shell pwd)/../hdl/delayed_dut.v
+TOPLEVEL = delayed_dut
+MODULE = dut_test
 
-run:
-	iverilog -o sim -I../hdl ../hdl/FIFO1.v ../hdl/FIFO2.v ../hdl/dut.v ../hdl/delayed_dut.v dut_test.py
-	vvp sim
+include $(shell cocotb-config --makefiles)/Makefile.sim
+
+wave:
 	gtkwave dump.vcd
-
-clean:
-	rm -f sim dump.vcd
