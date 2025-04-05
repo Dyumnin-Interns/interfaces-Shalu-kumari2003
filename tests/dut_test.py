@@ -1,55 +1,58 @@
+# test/dut_test.py
 import cocotb
-from cocotb.triggers import RisingEdge, Timer
 from cocotb.clock import Clock
-
-async def reset_dut(dut):
-    dut.RST_N.value = 0
-    dut.a_data.value = 0
-    dut.b_data.value = 0
-    dut.a_en.value = 0
-    dut.b_en.value = 0
-    await Timer(20, units="ns")
-    dut.RST_N.value = 1
-    await RisingEdge(dut.CLK)
+from cocotb.triggers import RisingEdge, FallingEdge, ClockCycles
+import random
 
 @cocotb.test()
 async def test_xor_gate(dut):
-    # Start 100MHz clock
-    cocotb.start_soon(Clock(dut.CLK, 10, units="ns").start())
+    clock = Clock(dut.clk, 10, units="ns")  # 100MHz clock
+    cocotb.start_soon(clock.start())
     
     # Reset
-    await reset_dut(dut)
+    dut.rst.value = 1
+    await ClockCycles(dut.clk, 5)
+    dut.rst.value = 0
     
-    # Test cases: (a, b, expected_y)
-    test_cases = [
-        (0, 0, 0),
-        (0, 1, 1),
-        (1, 0, 1),
-        (1, 1, 0)
-    ]
+    # Test all possible inputs
+    test_cases = [(0,0), (0,1), (1,0), (1,1)]
     
-    for a, b, expected in test_cases:
-        # Drive inputs
-        dut.a_data.value = a
-        dut.b_data.value = b
-        dut.a_en.value = 1
-        dut.b_en.value = 1
-        await RisingEdge(dut.CLK)
-        
-        # Clear enables
-        dut.a_en.value = 0
-        dut.b_en.value = 0
+    for a, b in test_cases:
+        # Wait until FIFO is ready
+        while dut.full.value == 1:
+            await RisingEdge(dut.clk)
+            
+        # Send input
+        dut.din.value = (b << 1) | a
+        dut.wr_en.value = 1
+        await RisingEdge(dut.clk)
+        dut.wr_en.value = 0
         
         # Wait for output
-        while not dut.y_en.value:
-            await RisingEdge(dut.CLK)
-        
-        # Verify output
-        assert dut.y_data.value == expected, f"Failed: {a} XOR {b} = {dut.y_data.value} (expected {expected})"
-        
-        # Acknowledge output
-        dut.y_rdy.value = 1
-        await RisingEdge(dut.CLK)
-        dut.y_rdy.value = 0
+        while dut.empty.value == 1:
+            await RisingEdge(dut.clk)
+            
+        # Check output
+        expected = a ^ b
+        assert dut.dout.value[0] == expected, f"XOR failed for {a}, {b}: got {dut.dout.value[0]}, expected {expected}"
+        print(f"PASS: {a} XOR {b} = {dut.dout.value[0]}")
     
-    dut._log.info("All tests passed!")
+    # Random tests
+    for _ in range(10):
+        a = random.randint(0, 1)
+        b = random.randint(0, 1)
+        
+        while dut.full.value == 1:
+            await RisingEdge(dut.clk)
+            
+        dut.din.value = (b << 1) | a
+        dut.wr_en.value = 1
+        await RisingEdge(dut.clk)
+        dut.wr_en.value = 0
+        
+        while dut.empty.value == 1:
+            await RisingEdge(dut.clk)
+            
+        expected = a ^ b
+        assert dut.dout.value[0] == expected, f"XOR failed for {a}, {b}: got {dut.dout.value[0]}, expected {expected}"
+        print(f"PASS: {a} XOR {b} = {dut.dout.value[0]}")
