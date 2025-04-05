@@ -15,7 +15,7 @@ module delayed_dut (
     input wire write_en
 );
 
-// Add 2-cycle delay to all signals
+// 2-stage delay registers
 reg [2:0] read_address_d1, read_address_d2;
 reg read_en_d1, read_en_d2;
 reg [2:0] write_address_d1, write_address_d2;
@@ -24,16 +24,11 @@ reg write_en_d1, write_en_d2;
 
 always @(posedge CLK or negedge RST_N) begin
     if (!RST_N) begin
-        read_address_d1 <= 3'b0;
-        read_address_d2 <= 3'b0;
-        read_en_d1 <= 1'b0;
-        read_en_d2 <= 1'b0;
-        write_address_d1 <= 3'b0;
-        write_address_d2 <= 3'b0;
-        write_data_d1 <= 1'b0;
-        write_data_d2 <= 1'b0;
-        write_en_d1 <= 1'b0;
-        write_en_d2 <= 1'b0;
+        {read_address_d1, read_address_d2} <= 0;
+        {read_en_d1, read_en_d2} <= 0;
+        {write_address_d1, write_address_d2} <= 0;
+        {write_data_d1, write_data_d2} <= 0;
+        {write_en_d1, write_en_d2} <= 0;
     end else begin
         read_address_d1 <= read_address;
         read_address_d2 <= read_address_d1;
@@ -48,7 +43,7 @@ always @(posedge CLK or negedge RST_N) begin
     end
 end
 
-// Instantiate actual DUT with delayed signals
+// Instantiate actual DUT
 dut dut_inst (
     .CLK(CLK),
     .RST_N(RST_N),
