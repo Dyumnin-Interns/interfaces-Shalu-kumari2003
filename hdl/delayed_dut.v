@@ -27,11 +27,9 @@ module delayed_dut (
             y_en_reg <= 0;
         end
         else begin
-            // Capture inputs
             if (a_en && a_rdy) a_valid <= 1;
             if (b_en && b_rdy) b_valid <= 1;
             
-            // Compute XOR when both inputs ready
             if (a_valid && b_valid) begin
                 y_data_reg <= a_data ^ b_data;
                 y_en_reg <= 1;
@@ -39,7 +37,6 @@ module delayed_dut (
                 b_valid <= 0;
             end
             
-            // Clear output when consumed
             if (y_en_reg && y_rdy) begin
                 y_en_reg <= 0;
             end
