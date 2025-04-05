@@ -1,28 +1,7 @@
-// BSV/mem_if.bsv
-package MemIfc;
-
 interface MemIfc;
-    method Action put(Bit#(1) a, Bit#(1) b);
-    method Bit#(1) get();
+    method Action readReq(Bit#(3) addr);
+    method ActionValue#(Bit#(1)) readResp();
+    
+    method Action writeReq(Bit#(3) addr, Bit#(1) data);
+    method Bool writeReady();
 endinterface
-
-module mkXOR(MemIfc);
-    Reg#(Bit#(1)) x <- mkReg(0);
-    Reg#(Bit#(1)) y <- mkReg(0);
-    Reg#(Bit#(1)) out <- mkReg(0);
-
-    rule compute;
-        out <= x ^ y;
-    endrule
-
-    method Action put(Bit#(1) a, Bit#(1) b);
-        x <= a;
-        y <= b;
-    endmethod
-
-    method Bit#(1) get();
-        return out;
-    endmethod
-endmodule
-
-endpackage
