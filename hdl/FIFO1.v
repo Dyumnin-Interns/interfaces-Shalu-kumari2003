@@ -5,26 +5,23 @@ module FIFO1 (
     input wire write_data,
     output wire write_rdy,
     input wire read_en,
-    output wire read_data,
+    output reg read_data,
     output wire read_rdy
 );
 
-reg [0:0] mem;
-reg full;
-reg empty;
+reg full, empty;
 
 assign write_rdy = !full;
 assign read_rdy = !empty;
-assign read_data = mem;
 
 always @(posedge CLK or negedge RST_N) begin
     if (!RST_N) begin
-        mem <= 1'b0;
+        read_data <= 1'b0;
         full <= 1'b0;
         empty <= 1'b1;
     end else begin
         if (write_en && !full) begin
-            mem <= write_data;
+            read_data <= write_data;
             full <= 1'b1;
             empty <= 1'b0;
         end else if (read_en && !empty) begin
