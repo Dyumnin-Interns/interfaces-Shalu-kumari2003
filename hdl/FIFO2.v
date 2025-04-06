@@ -1,29 +1,31 @@
 module FIFO2 (
-    input CLK,
-    input RST_N,
-    input enq,
-    input [0:0] din,
-    output reg full,
-    output reg [0:0] dout,
-    output reg empty
+    input clk,
+    input reset_n,
+    input data_in,
+    input enable_in,
+    output ready_out,
+    output data_out,
+    output enable_out,
+    input ready_in
 );
-    reg [1:0] fifo;
-    reg [0:0] head;
-    
-    always @(posedge CLK or negedge RST_N) begin
-        if (!RST_N) begin
-            fifo <= 0;
-            head <= 0;
+    reg buffer;
+    reg full;
+
+    assign ready_out = !full;
+    assign data_out = buffer;
+    assign enable_out = full;
+
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
+            buffer <= 0;
             full <= 0;
-            empty <= 1;
         end
-        else if (enq && !full) begin
-            fifo[head] <= din;
-            head <= head + 1;
-            empty <= 0;
-            full <= (head == 1);
+        else if (enable_in && ready_out) begin
+            buffer <= data_in;
+            full <= 1;
+        end
+        else if (enable_out && ready_in) begin
+            full <= 0;
         end
     end
-    
-    assign dout = fifo[0];
 endmodule
