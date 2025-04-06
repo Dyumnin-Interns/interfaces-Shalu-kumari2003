@@ -1,42 +1,52 @@
 module dut (
-    input CLK,
-    input RST_N,
-    input [2:0] read_address,
-    output reg [0:0] read_data,
-    output reg read_rdy,
-    input read_en,
-    output reg write_rdy,
-    input [2:0] write_address,
-    input [0:0] write_data,
-    input write_en
+    input clk,
+    input reset_n,
+    input A_data,
+    input A_enable,
+    output A_ready,
+    input B_data,
+    input B_enable,
+    output B_ready,
+    output Y_data,
+    output Y_enable,
+    input Y_ready
 );
-    wire [0:0] a_status, b_status, y_status, y_output;
-    wire [0:0] a_data, b_data;
-    
-    // Instantiate FIFOs
-    FIFO1 a_fifo(CLK, RST_N, write_en && write_address==4, write_data, a_status, a_data, );
-    FIFO1 b_fifo(CLK, RST_N, write_en && write_address==5, write_data, b_status, b_data, );
-    FIFO2 y_fifo(CLK, RST_N, a_status && b_status, a_data ^ b_data, , y_output, y_status);
-    
-    always @(posedge CLK or negedge RST_N) begin
-        if (!RST_N) begin
-            read_data <= 0;
-            read_rdy <= 0;
-            write_rdy <= 1;
-        end
-        else begin
-            read_rdy <= read_en;
-            write_rdy <= 1;
-            
-            if (read_en) begin
-                case (read_address)
-                    0: read_data <= a_status;
-                    1: read_data <= b_status;
-                    2: read_data <= y_status;
-                    3: read_data <= y_output;  // XOR output
-                    default: read_data <= 0;
-                endcase
-            end
-        end
-    end
+    // Instantiate FIFO1 for input A
+    FIFO1 fifo_A (
+        .clk(clk),
+        .reset_n(reset_n),
+        .data_in(A_data),
+        .enable_in(A_enable),
+        .ready_out(A_ready),
+        .data_out(A_fifo_out),
+        .enable_out(A_fifo_enable),
+        .ready_in(A_fifo_ready)
+    );
+
+    // Instantiate FIFO1 for input B
+    FIFO1 fifo_B (
+        .clk(clk),
+        .reset_n(reset_n),
+        .data_in(B_data),
+        .enable_in(B_enable),
+        .ready_out(B_ready),
+        .data_out(B_fifo_out),
+        .enable_out(B_fifo_enable),
+        .ready_in(B_fifo_ready)
+    );
+
+    // Instantiate delayed_dut (XOR Logic)
+    delayed_dut xor_logic (
+        .clk(clk),
+        .reset_n(reset_n),
+        .A_data(A_fifo_out),
+        .A_enable(A_fifo_enable),
+        .A_ready(A_fifo_ready),
+        .B_data(B_fifo_out),
+        .B_enable(B_fifo_enable),
+        .B_ready(B_fifo_ready),
+        .Y_data(Y_data),
+        .Y_enable(Y_enable),
+        .Y_ready(Y_ready)
+    );
 endmodule
