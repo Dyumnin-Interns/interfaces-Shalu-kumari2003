@@ -11,7 +11,12 @@ module dut (
     output Y_enable,
     input Y_ready
 );
-    // Instantiate FIFO1 for input A
+    // FIFO signals
+    wire A_fifo_out, B_fifo_out;
+    wire A_fifo_enable, B_fifo_enable;
+    wire A_fifo_ready, B_fifo_ready;
+
+    // FIFO1 for input A
     FIFO1 fifo_A (
         .clk(clk),
         .reset_n(reset_n),
@@ -23,7 +28,7 @@ module dut (
         .ready_in(A_fifo_ready)
     );
 
-    // Instantiate FIFO1 for input B
+    // FIFO1 for input B
     FIFO1 fifo_B (
         .clk(clk),
         .reset_n(reset_n),
@@ -35,7 +40,7 @@ module dut (
         .ready_in(B_fifo_ready)
     );
 
-    // Instantiate delayed_dut (XOR Logic)
+    // XOR Logic
     delayed_dut xor_logic (
         .clk(clk),
         .reset_n(reset_n),
