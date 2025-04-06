@@ -1,28 +1,18 @@
 TOPLEVEL_LANG = verilog
-VERILOG_SOURCES = ../hdl/dut.v ../hdl/FIFO1.v ../hdl/FIFO2.v ../hdl/delayed_dut.v
-TOPLEVEL = dut
+VERILOG_SOURCES = ../hdl/delayed_dut.v ../hdl/FIFO1.v ../hdl/FIFO2.v
+TOPLEVEL = delayed_dut  # Match the module name in delayed_dut.v
 MODULE = dut_test
+SIM = icarus  # Explicitly set Icarus Verilog as simulator
 
-# Icarus Verilog specific flags for waveform generation
-SIM_ARGS += -D COCOTB_SIM=1 -s $(TOPLEVEL) -g2012
-EXTRA_ARGS += -Wall
-
-# For VCD generation
-PLUSARGS += -lvvm
-SIM_BUILD = sim_build
-VCD = waveform.vcd
+# Ensure tests directory exists and copy VCD files
+EXTRA_ARGS += -o sim_build/sim.vvp
+COCOTB_HDL_TIMEUNIT = 1ns
+COCOTB_HDL_TIMEPRECISION = 1ps
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
-# Custom rule for simulation with VCD
-sim_build/sim.vvp: $(VERILOG_SOURCES)
-	@mkdir -p $(SIM_BUILD)
-	iverilog -o $@ $(SIM_ARGS) $(VERILOG_SOURCES) -DCOCOTB_SIM=1 -g2012
-
-waveform.vcd: sim_build/sim.vvp
-	vvp -n $< +lvvm $(PLUSARGS) +vcd=$(VCD)
-
-run: waveform.vcd
-
-clean::
-	rm -rf $(SIM_BUILD) $(VCD) results.xml
+# Custom target to ensure tests/ directory and move VCD files
+.PHONY: post_sim
+post_sim:
+	@mkdir -p tests
+	@if [ -f sim_build/delayed_dut.vcd ]; then mv sim_build/delayed_dut.vcd tests/; fi
