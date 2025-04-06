@@ -1,51 +1,55 @@
-import cocotb
-from cocotb.triggers import RisingEdge, Timer
-from cocotb.clock import Clock
+module dut (
+    input clk,
+    input reset_n,
+    input A_data,
+    input A_enable,
+    output A_ready,
+    input B_data,
+    input B_enable,
+    output B_ready,
+    output Y_data,
+    output Y_enable,
+    input Y_ready
+);
+    wire A_fifo_out, A_fifo_enable, A_fifo_ready;
+    wire B_fifo_out, B_fifo_enable, B_fifo_ready;
 
-async def reset_dut(dut):
-    dut.reset_n.value = 0
-    dut.A_data.value = 0
-    dut.B_data.value = 0
-    dut.A_enable.value = 0
-    dut.B_enable.value = 0
-    await Timer(20, units="ns")
-    dut.reset_n.value = 1
-    await RisingEdge(dut.clk)
+    // Instantiate FIFO1 for input A
+    FIFO1 fifo_A (
+        .clk(clk),
+        .reset_n(reset_n),
+        .data_in(A_data),
+        .enable_in(A_enable),
+        .ready_out(A_ready),
+        .data_out(A_fifo_out),
+        .enable_out(A_fifo_enable),
+        .ready_in(A_fifo_ready)
+    );
 
-@cocotb.test()
-async def test_xor_gate(dut):
-    # Start 100MHz clock
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    
-    # Reset
-    await reset_dut(dut)
-    
-    # Test cases: (A, B, expected_Y)
-    test_cases = [
-        (0, 0, 0),
-        (0, 1, 1),
-        (1, 0, 1),
-        (1, 1, 0)
-    ]
-    
-    for a, b, expected in test_cases:
-        # Drive inputs
-        dut.A_data.value = a
-        dut.B_data.value = b
-        dut.A_enable.value = 1
-        dut.B_enable.value = 1
-        await RisingEdge(dut.clk)
-        
-        # Wait for computation
-        while not dut.Y_enable.value:
-            await RisingEdge(dut.clk)
-        
-        # Verify output
-        assert dut.Y_data.value == expected, f"Failed: {a} XOR {b} = {dut.Y_data.value} (expected {expected})"
-        
-        # Acknowledge output
-        dut.Y_ready.value = 1
-        await RisingEdge(dut.clk)
-        dut.Y_ready.value = 0
-    
-    dut._log.info("All XOR tests passed!")
+    // Instantiate FIFO1 for input B
+    FIFO1 fifo_B (
+        .clk(clk),
+        .reset_n(reset_n),
+        .data_in(B_data),
+        .enable_in(B_enable),
+        .ready_out(B_ready),
+        .data_out(B_fifo_out),
+        .enable_out(B_fifo_enable),
+        .ready_in(B_fifo_ready)
+    );
+
+    // Instantiate delayed_dut (XOR Logic)
+    delayed_dut xor_logic (
+        .clk(clk),
+        .reset_n(reset_n),
+        .A_data(A_fifo_out),
+        .A_enable(A_fifo_enable),
+        .A_ready(A_fifo_ready),
+        .B_data(B_fifo_out),
+        .B_enable(B_fifo_enable),
+        .B_ready(B_fifo_ready),
+        .Y_data(Y_data),
+        .Y_enable(Y_enable),
+        .Y_ready(Y_ready)
+    );
+endmodule
