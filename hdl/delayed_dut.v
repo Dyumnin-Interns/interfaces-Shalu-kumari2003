@@ -42,4 +42,13 @@ module delayed_dut (
             end
         end
     end
+
+    // VCD Dumping for waveform generation
+    `ifdef COCOTB_SIM
+    initial begin
+        $dumpfile("tests/delayed_dut.vcd");  // VCD file saved in tests/ directory
+        $dumpvars(0, delayed_dut);           // Dump all variables in this module
+        #1;
+    end
+    `endif
 endmodule
