@@ -11,9 +11,6 @@ module dut (
     output Y_enable,
     input Y_ready
 );
-    wire A_fifo_out, A_fifo_enable, A_fifo_ready;
-    wire B_fifo_out, B_fifo_enable, B_fifo_ready;
-
     // Instantiate FIFO1 for input A
     FIFO1 fifo_A (
         .clk(clk),
