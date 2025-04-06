@@ -1,10 +1,4 @@
-interface Mem_ifc;
-    // Read interface
-    method Action read(Bit#(3) read_address);
-    method Bit#(1) read_data;
-    method Bit#(1) read_rdy;
-    
-    // Write interface
-    method Action write(Bit#(3) write_address, Bit#(1) write_data);
-    method Bit#(1) write_rdy;
+interface Mem_If;
+    method Action put(Bit#(1) data);
+    method ActionValue#(Bit#(1)) get();
 endinterface
